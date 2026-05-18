@@ -1,0 +1,29 @@
+package com.example.be.controller;
+
+import com.example.be.dto.RegisterRequest;
+import com.example.be.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/auth")
+@CrossOrigin(origins = "http://localhost:5173") // Cho phép ReactJS port 5173 gọi API
+public class AuthController {
+
+    @Autowired
+    private UserService userService;
+
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@RequestBody RegisterRequest registerRequest) {
+        String result = userService.registerUser(registerRequest);
+
+        if (result.equals("Đăng ký tài khoản thành công!")) {
+            return ResponseEntity.ok(Map.of("message", result));
+        } else {
+            return ResponseEntity.badRequest().body(Map.of("message", result));
+        }
+    }
+}
