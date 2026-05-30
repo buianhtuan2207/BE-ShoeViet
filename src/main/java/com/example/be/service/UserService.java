@@ -1,7 +1,6 @@
 package com.example.be.service;
 
-import com.example.be.dto.req.LoginRequest;
-import com.example.be.dto.req.RegisterRequest;
+import com.example.be.dto.req.*;
 import com.example.be.dto.res.LoginResponse;
 import com.example.be.entity.OtpVerification;
 import com.example.be.entity.User;
@@ -113,5 +112,74 @@ public class UserService {
         // 4. Tạo token thành công và trả về cho người dùng
         String token = jwtUtils.generateToken(user.getEmail(), user.getRole()); // Gọi qua object đã tiêm
         return new LoginResponse(token, user.getEmail(), user.getFullName(), user.getRole());
+    }
+    public String processForgotPassword(ForgotPasswordRequest request) {
+        // 1. Kiểm tra xem email có tồn tại trong hệ thống không
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("Email này không tồn tại trên hệ thống!"));
+
+        // 2. Tạo mã OTP quên mật khẩu (6 số)
+        String otp6So = String.format("%06d", new Random().nextInt(999999));
+
+        // 3. Lưu vào bảng otp_verification (Xóa OTP cũ của user này nếu có để tránh rác DB)
+        // Bạn có thể viết thêm hàm deleteByUserId trong Repo hoặc cứ lưu đè một dòng mới
+        OtpVerification otp = new OtpVerification();
+        otp.setUser(user);
+        otp.setOtpCode(otp6So);
+        otp.setExpiryTime(LocalDateTime.now().plusMinutes(10)); // OTP quên mật khẩu cho hết hạn sau 10 phút
+        otpVerificationRepository.save(otp);
+
+        // 4. Gửi mail chứa OTP cho khách
+        try {
+            emailService.sendOtpEmail(user.getEmail(), otp6So); // Tái sử dụng hàm gửi mail cũ của bạn
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi hệ thống khi gửi Email!");
+        }
+
+        return "Mã OTP đặt lại mật khẩu đã được gửi vào Email của bạn.";
+    }
+
+    public String verifyForgotOtp(VerifyForgotOtpRequest request) {
+        // Tìm OTP dựa trên otpCode
+        OtpVerification otp = otpVerificationRepository.findByOtpCode(request.getOtp())
+                .orElseThrow(() -> new RuntimeException("Mã OTP không chính xác!"));
+
+        // Kiểm tra xem OTP này có phải của email đang yêu cầu không
+        if (!otp.getUser().getEmail().equals(request.getEmail())) {
+            throw new RuntimeException("Mã OTP không trùng khớp với tài khoản này!");
+        }
+
+        // Kiểm tra hết hạn
+        if (otp.getExpiryTime().isBefore(LocalDateTime.now())) {
+            otpVerificationRepository.delete(otp);
+            throw new RuntimeException("Mã OTP đã hết hạn!");
+        }
+
+        return "Mã OTP hợp lệ! Bạn có thể tiến hành đổi mật khẩu.";
+    }
+
+    public String resetPassword(ResetPasswordRequest request) {
+        // Xác thực lại OTP một lần nữa cho chắc chắn trước khi đổi mật khẩu
+        OtpVerification otp = otpVerificationRepository.findByOtpCode(request.getOtp())
+                .orElseThrow(() -> new RuntimeException("Mã OTP không hợp lệ hoặc đã bị hủy!"));
+
+        if (!otp.getUser().getEmail().equals(request.getEmail())) {
+            throw new RuntimeException("Yêu cầu không hợp lệ!");
+        }
+
+        if (otp.getExpiryTime().isBefore(LocalDateTime.now())) {
+            otpVerificationRepository.delete(otp);
+            throw new RuntimeException("Mã OTP đã hết hạn!");
+        }
+
+        // Tiến hành đổi mật khẩu
+        User user = otp.getUser();
+        user.setPassword(passwordEncoder.encode(request.getNewPassword())); // Mã hóa mật khẩu mới
+        userRepository.save(user);
+
+        // Xóa mã OTP đi sau khi đã đổi mật khẩu thành công
+        otpVerificationRepository.delete(otp);
+
+        return "Đặt lại mật khẩu thành công! Bạn có thể đăng nhập bằng mật khẩu mới.";
     }
 }

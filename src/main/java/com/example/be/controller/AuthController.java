@@ -1,7 +1,6 @@
 package com.example.be.controller;
 
-import com.example.be.dto.req.LoginRequest;
-import com.example.be.dto.req.RegisterRequest;
+import com.example.be.dto.req.*;
 import com.example.be.dto.res.LoginResponse;
 import com.example.be.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +45,35 @@ public class AuthController {
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             // Trả về lỗi 400 kèm thông báo sai mật khẩu/chưa kích hoạt
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequest request) {
+        try {
+            String message = userService.processForgotPassword(request);
+            return ResponseEntity.ok(message);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/verify-forgot-otp")
+    public ResponseEntity<?> verifyForgotOtp(@RequestBody VerifyForgotOtpRequest request) {
+        try {
+            String message = userService.verifyForgotOtp(request);
+            return ResponseEntity.ok(message);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest request) {
+        try {
+            String message = userService.resetPassword(request);
+            return ResponseEntity.ok(message);
+        } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
