@@ -1,5 +1,6 @@
 package com.example.be.config;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -9,21 +10,25 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+    @Autowired
+    private com.example.be.util.JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // 1. Tắt cấu hình CSRF để Postman có thể gọi các API POST, PUT, DELETE mượt mà
                 .csrf(csrf -> csrf.disable())
-
-                // 2. Cấu hình phân quyền đường dẫn
                 .authorizeHttpRequests(auth -> auth
-                        // Cho phép tất cả mọi người truy cập vào các API bắt đầu bằng /api/auth/ mà không cần đăng nhập
+                        // 1. Các API auth (đăng ký, login, otp) thì cho phép vào tự do không cần token
                         .requestMatchers("/api/auth/**").permitAll()
 
-                        // Tất cả các yêu cầu khác ngoài /api/auth/** đều bắt buộc phải đăng nhập/xác thực
+                        // 2. Toàn bộ các API /api/users/** BẮT BUỘC phải đăng nhập (phải có Token hợp lệ)
+                        .requestMatchers("/api/users/**").authenticated()
+
+                        // Các request khác còn lại cũng bắt đăng nhập
                         .anyRequest().authenticated()
-                );
+                )
+                // Giữ nguyên filter cũ của bạn bên dưới
+                .addFilterBefore(jwtAuthenticationFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

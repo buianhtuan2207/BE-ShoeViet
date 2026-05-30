@@ -1,12 +1,15 @@
-package com.example.be.controller;
+package com.example.be.controller.auth;
 
 import com.example.be.dto.req.*;
 import com.example.be.dto.res.LoginResponse;
+import com.example.be.entity.User;
 import com.example.be.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController

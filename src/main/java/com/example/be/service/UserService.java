@@ -11,6 +11,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
@@ -27,7 +28,7 @@ public class UserService {
     private EmailService emailService;
 
     @Autowired
-    private com.example.be.security.JwtUtils jwtUtils;
+    private com.example.be.util.JwtUtils jwtUtils;
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -181,5 +182,41 @@ public class UserService {
         otpVerificationRepository.delete(otp);
 
         return "Đặt lại mật khẩu thành công! Bạn có thể đăng nhập bằng mật khẩu mới.";
+    }
+    public User getUserById(Integer id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng với ID: " + id));
+    }
+
+    // Lấy tất cả danh sách người dùng trong hệ thống
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+
+    // Cập nhật thông tin hồ sơ
+    public User updateProfileByEmail(String email, UpdateProfileRequest request) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại!"));
+
+        // Chỉ cập nhật fullName nếu request có truyền lên dữ liệu mới
+        if (request.getFullName() != null && !request.getFullName().trim().isEmpty()) {
+            user.setFullName(request.getFullName());
+        }
+
+        // Chỉ cập nhật phone nếu request có truyền lên dữ liệu mới
+        if (request.getPhone() != null && !request.getPhone().trim().isEmpty()) {
+            user.setPhone(request.getPhone());
+        }
+
+        // Chỉ cập nhật address nếu request có truyền lên dữ liệu mới
+        if (request.getAddress() != null && !request.getAddress().trim().isEmpty()) {
+            user.setAddress(request.getAddress());
+        }
+
+        return userRepository.save(user);
+    }
+    public User getUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng với email: " + email));
     }
 }

@@ -1,5 +1,6 @@
-package com.example.be.security;
+package com.example.be.util;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
@@ -22,5 +23,30 @@ public class JwtUtils {
                 .expiration(new Date(System.currentTimeMillis() + JWT_EXPIRATION)) // Sẽ hết hạn sau đúng 1 giờ
                 .signWith(key)
                 .compact();
+    }
+    // 1. Hàm lấy toàn bộ thông tin (Claims) bên trong Token ra
+    private Claims getClaimsFromToken(String token) {
+        SecretKey key = Keys.hmacShaKeyFor(JWT_SECRET.getBytes());
+        return Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+    }
+
+    // Hàm trích xuất Email (Subject) ra từ Token để biết ai đang gọi API
+    public String getEmailFromToken(String token) {
+        Claims claims = getClaimsFromToken(token);
+        return claims.getSubject();
+    }
+
+    // Hàm kiểm tra xem Token còn hạn sử dụng hay không
+    public boolean validateToken(String token) {
+        try {
+            Claims claims = getClaimsFromToken(token);
+            return !claims.getExpiration().before(new Date());
+        } catch (Exception e) {
+            return false; // Token sai, lỗi hoặc hết hạn
+        }
     }
 }
