@@ -8,32 +8,36 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
-@Data // Tự động tạo getter, setter, toString, equals, hashCode nhờ Lombok
-@NoArgsConstructor // Tạo constructor không tham số bắt buộc của JPA
-@AllArgsConstructor // Tạo constructor đầy đủ tham số
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Integer id;
 
-    @Column(name = "full_name", nullable = false)
+    @Column(name = "full_name", nullable = false, length = 100)
     private String fullName;
 
-    @Column(nullable = false, unique = true, length = 150)
+    @Column(nullable = false, unique = true, length = 100)
     private String email;
 
-    @Column(nullable = false)
-    private String password; // Mật khẩu đã được mã hóa BCrypt
+    @Column(name = "password_hash", nullable = false)
+    private String password;
 
-    @Column(length = 15)
+    @Column(name = "phone_number", length = 15)
     private String phone;
 
+    @Column(columnDefinition = "TEXT")
     private String address;
 
-    @Column(name = "otp_code", length = 6)
-    private String otpCode; // Lưu mã OTP 6 chữ số khi yêu cầu quên mật khẩu
+    @Column(name = "role", columnDefinition = "ENUM('customer', 'admin')")
+    private String role = "customer";
 
-    @Column(name = "otp_requested_time")
-    private LocalDateTime otpRequestedTime; // Lưu thời gian tạo OTP để tính thời gian hết hạn (ví dụ: sau 60s)
+    @Column(name = "created_at", insertable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "enabled")
+    private boolean enabled = false;
 }

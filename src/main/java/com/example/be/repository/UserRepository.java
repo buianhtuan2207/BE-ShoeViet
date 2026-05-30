@@ -7,10 +7,11 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface UserRepository extends JpaRepository<User, Integer> {
     // Kiểm tra xem email đã tồn tại trong DB chưa
     boolean existsByEmail(String email);
 
     // Tìm user bằng email (dùng cho đăng nhập sau này)
     Optional<User> findByEmail(String email);
+
 }

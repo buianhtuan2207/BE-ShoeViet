@@ -20,10 +20,20 @@ public class AuthController {
     public ResponseEntity<?> register(@RequestBody RegisterRequest registerRequest) {
         String result = userService.registerUser(registerRequest);
 
-        if (result.equals("Đăng ký tài khoản thành công!")) {
+        if (result.contains("thành công")) {
             return ResponseEntity.ok(Map.of("message", result));
         } else {
             return ResponseEntity.badRequest().body(Map.of("message", result));
+        }
+    }
+
+    @PostMapping("/verify-otp")
+    public ResponseEntity<?> verifyOtp(@RequestParam String otp) {
+        boolean isVerified = userService.verifyOtp(otp);
+        if (isVerified) {
+            return ResponseEntity.ok("Xác thực tài khoản thành công! Bạn có thể đăng nhập.");
+        } else {
+            return ResponseEntity.badRequest().body("Mã OTP không hợp lệ hoặc đã hết hạn!");
         }
     }
 }
