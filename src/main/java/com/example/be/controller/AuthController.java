@@ -1,6 +1,8 @@
 package com.example.be.controller;
 
-import com.example.be.dto.RegisterRequest;
+import com.example.be.dto.req.LoginRequest;
+import com.example.be.dto.req.RegisterRequest;
+import com.example.be.dto.res.LoginResponse;
 import com.example.be.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -34,6 +36,17 @@ public class AuthController {
             return ResponseEntity.ok("Xác thực tài khoản thành công! Bạn có thể đăng nhập.");
         } else {
             return ResponseEntity.badRequest().body("Mã OTP không hợp lệ hoặc đã hết hạn!");
+        }
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+        try {
+            LoginResponse response = userService.login(request);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            // Trả về lỗi 400 kèm thông báo sai mật khẩu/chưa kích hoạt
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 }

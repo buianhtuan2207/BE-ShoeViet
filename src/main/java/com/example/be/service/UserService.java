@@ -1,6 +1,8 @@
 package com.example.be.service;
 
-import com.example.be.dto.RegisterRequest;
+import com.example.be.dto.req.LoginRequest;
+import com.example.be.dto.req.RegisterRequest;
+import com.example.be.dto.res.LoginResponse;
 import com.example.be.entity.OtpVerification;
 import com.example.be.entity.User;
 import com.example.be.repository.OtpVerificationRepository;
@@ -12,7 +14,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Random;
-import java.util.UUID;
 
 @Service
 public class UserService {
@@ -25,6 +26,9 @@ public class UserService {
 
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private com.example.be.security.JwtUtils jwtUtils;
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -89,5 +93,25 @@ public class UserService {
 
         otpVerificationRepository.delete(otp); // Xóa OTP sau khi dùng
         return true;
+    }
+
+    public LoginResponse login(LoginRequest request) {
+        // 1. Kiểm tra Email xem có tồn tại không
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("Email hoặc mật khẩu không chính xác!"));
+
+        // 2. Kiểm tra mật khẩu (Giải mã và so khớp với password_hash trong DB)
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new RuntimeException("Email hoặc mật khẩu không chính xác!");
+        }
+
+        // 3. Kiểm tra xem tài khoản đã được kích hoạt OTP chưa
+        if (!user.isEnabled()) {
+            throw new RuntimeException("Tài khoản chưa được kích hoạt OTP! Vui lòng xác thực trước.");
+        }
+
+        // 4. Tạo token thành công và trả về cho người dùng
+        String token = jwtUtils.generateToken(user.getEmail(), user.getRole()); // Gọi qua object đã tiêm
+        return new LoginResponse(token, user.getEmail(), user.getFullName(), user.getRole());
     }
 }
