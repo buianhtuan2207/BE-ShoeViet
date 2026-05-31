@@ -23,46 +23,18 @@ public class ProductService {
     @Autowired
     private ProductImageRepository productImageRepository;
 
+    // --- 1. LẤY TẤT CẢ SẢN PHẨM ---
     @Transactional(readOnly = true)
     public List<ProductResponse> getAllProducts() {
         List<Product> products = productRepository.findAllWithAllDetails();
-
-        return products.stream().map(product -> {
-
-            // 1. Map danh sách biến thể trước (nếu có)
-            List<VariantResponse> variantDTOs = null;
-            if (product.getVariants() != null) {
-                variantDTOs = product.getVariants().stream().map(variant ->
-                        VariantResponse.builder() // Giả định VariantResponse cũng dùng @Builder
-                                .id(variant.getId())
-                                .size(variant.getSize())
-                                .color(variant.getColor())
-                                .stockQuantity(variant.getStockQuantity())
-                                .sku(variant.getSku())
-                                .build()
-                ).collect(Collectors.toList());
-            }
-
-            // 2. Sử dụng @Builder để tạo đối tượng ProductResponse một cách mượt mà
-            return ProductResponse.builder()
-                    .id(product.getId())
-                    .name(product.getName())
-                    .description(product.getDescription())
-                    .basePrice(product.getBasePrice() != null ? product.getBasePrice().doubleValue() : 0.0)
-                    .imageUrl(product.getImageUrl())
-
-                    // Đọc tên từ bảng liên quan (Có check null an toàn)
-                    .categoryName(product.getCategory() != null ? product.getCategory().getName() : "Không có danh mục")
-                    .brandName(product.getBrand() != null ? product.getBrand().getName() : "Không có thương hiệu")
-
-                    // Nạp mảng biến thể đã map ở bước 1 vào đây
-                    .variants(variantDTOs)
-                    .build(); // Kết thúc Builder câu lệnh trả về object hoàn chỉnh
-
-        }).collect(Collectors.toList());
+        return products.stream()
+                .map(this::convertToResponse) // Tái sử dụng hàm helper bên dưới
+                .collect(Collectors.toList());
     }
 
-    public Product addProduct(ProductRequest request) {
+    // --- 2. THÊM SẢN PHẨM MỚI
+    @Transactional
+    public ProductResponse addProduct(ProductRequest request) {
         // 1. LƯU THÔNG TIN CHUNG VÀO BẢNG `products`
         Product product = new Product();
         product.setCategoryId(request.getCategoryId());
@@ -76,21 +48,97 @@ public class ProductService {
         Product savedProduct = productRepository.save(product);
 
         // 2. LƯU NHIỀU ẢNH PHỤ VÀO BẢNG `product_images`
-        // Kiểm tra xem người dùng có gửi list ảnh phụ lên không
         if (request.getGalleryImages() != null && !request.getGalleryImages().isEmpty()) {
-
-            // Duyệt qua từng đường link ảnh và lưu xuống DB
             for (String url : request.getGalleryImages()) {
                 ProductImage productImage = new ProductImage();
-
-                // Trỏ ID về sản phẩm vừa tạo ở bước 1
                 productImage.setProductId(savedProduct.getId());
                 productImage.setImageUrl(url);
-
                 productImageRepository.save(productImage);
             }
         }
 
-        return savedProduct;
+        // Đọc lại từ DB để có đầy đủ thông tin Category, Brand phục vụ việc map dữ liệu trả về
+        Product fullProduct = productRepository.findById(savedProduct.getId())
+                .orElse(savedProduct);
+
+        return this.convertToResponse(fullProduct);
+    }
+
+    // --- 3. CẬP NHẬT SẢN PHẨM
+    @Transactional
+    public ProductResponse updateProduct(Integer id, ProductRequest request) {
+        // 1. Lấy dữ liệu cũ đang có trong Database ra
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm với ID: " + id));
+
+        // 2. CHECK NULL: Nếu trường nào truyền lên có giá trị thì mới đè, không thì GIỮ NGUYÊN
+        if (request.getName() != null) {
+            product.setName(request.getName());
+        }
+        if (request.getDescription() != null) {
+            product.setDescription(request.getDescription());
+        }
+        if (request.getBasePrice() != null) {
+            product.setBasePrice(request.getBasePrice());
+        }
+        if (request.getImageUrl() != null) {
+            product.setImageUrl(request.getImageUrl());
+        }
+        if (request.getCategoryId() != null) {
+            product.setCategoryId(request.getCategoryId());
+        }
+        if (request.getBrandId() != null) {
+            product.setBrandId(request.getBrandId());
+        }
+
+        // 3. Xử lý ảnh phụ: Chỉ thay đổi nếu người dùng thực sự truyền mảng galleryImages lên
+        if (request.getGalleryImages() != null) {
+            // Xóa sạch ảnh phụ cũ
+            productImageRepository.deleteByProductId(product.getId());
+
+            // Lưu loạt ảnh phụ mới nếu mảng không rỗng
+            if (!request.getGalleryImages().isEmpty()) {
+                for (String url : request.getGalleryImages()) {
+                    ProductImage productImage = new ProductImage();
+                    productImage.setProductId(product.getId());
+                    productImage.setImageUrl(url);
+                    productImageRepository.save(productImage);
+                }
+            }
+        }
+
+        // 4. Lưu lại sản phẩm sau khi cập nhật chọn lọc
+        Product updatedProduct = productRepository.save(product);
+
+        return this.convertToResponse(updatedProduct);
+    }
+
+    private ProductResponse convertToResponse(Product product) {
+        List<VariantResponse> variantDTOs = null;
+
+        // Map mảng variants sang DTO (chỉ lấy data thuần túy, bỏ trường "product" lặp ngược lại)
+        if (product.getVariants() != null) {
+            variantDTOs = product.getVariants().stream().map(variant ->
+                    VariantResponse.builder()
+                            .id(variant.getId())
+                            .size(variant.getSize())
+                            .color(variant.getColor())
+                            .stockQuantity(variant.getStockQuantity())
+                            .sku(variant.getSku())
+                            .build()
+            ).collect(Collectors.toList());
+        }
+
+        return ProductResponse.builder()
+                .id(product.getId())
+                .name(product.getName())
+                .description(product.getDescription())
+                .basePrice(product.getBasePrice() != null ? product.getBasePrice().doubleValue() : 0.0)
+                .imageUrl(product.getImageUrl())
+                // Tránh lỗi Lazy bằng cách check null an toàn cho Category và Brand
+                .categoryName(product.getCategory() != null ? product.getCategory().getName() : "Không có danh mục")
+                .brandName(product.getBrand() != null ? product.getBrand().getName() : "Không có thương hiệu")
+                .variants(variantDTOs)
+                .build();
     }
 }
