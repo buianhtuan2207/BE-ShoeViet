@@ -20,10 +20,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // 1. Các API auth (đăng ký, login, otp) thì cho phép vào tự do không cần token
                         .requestMatchers("/api/auth/**").permitAll()
-
-                        // 2. Toàn bộ các API /api/users/** BẮT BUỘC phải đăng nhập (phải có Token hợp lệ)
-                        .requestMatchers("/api/users/**").authenticated()
-
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/products/**", "/api/categories/**", "/api/brands/**").permitAll()
+                        // 2. Các hành động POST, PUT, DELETE vào sản phẩm/danh mục/thương hiệu/user bắt buộc phải ĐĂNG NHẬP
+                        .requestMatchers("/api/users/**", "/api/products/**", "/api/categories/**", "/api/brands/**").authenticated()
                         // Các request khác còn lại cũng bắt đăng nhập
                         .anyRequest().authenticated()
                 )
