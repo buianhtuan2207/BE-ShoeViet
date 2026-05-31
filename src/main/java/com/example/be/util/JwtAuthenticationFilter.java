@@ -6,11 +6,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority; // 👈 Thêm import này
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
-import java.util.Collections;
+import java.util.List; // 👈 Thêm import này
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -33,9 +34,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (jwtUtils.validateToken(token)) {
                 String email = jwtUtils.getEmailFromToken(token);
 
-                // 4. Nếu Token hợp lệ, tạo đối tượng chứng thực báo cho Spring Security
+                //  Lấy role từ token ra
+                String role = jwtUtils.getRoleFromToken(token);
+
+                // 4. Chuyển chuỗi role (ví dụ: "admin") thành quyền hạn hợp lệ của Spring Security
+                List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(role));
+
+                // Nạp danh sách authorities thay vì Collections.emptyList()
                 UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(email, null, Collections.emptyList());
+                        new UsernamePasswordAuthenticationToken(email, null, authorities);
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }

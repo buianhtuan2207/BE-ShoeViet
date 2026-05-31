@@ -40,6 +40,12 @@ public class JwtUtils {
         return claims.getSubject();
     }
 
+    // Hàm trích xuất Role ra từ Token để phục vụ phân quyền
+    public String getRoleFromToken(String token) {
+        Claims claims = getClaimsFromToken(token);
+        return claims.get("role", String.class); // Lấy chính xác cái key "role" bạn đã lưu lúc generate
+    }
+
     // Hàm kiểm tra xem Token còn hạn sử dụng hay không
     public boolean validateToken(String token) {
         try {
