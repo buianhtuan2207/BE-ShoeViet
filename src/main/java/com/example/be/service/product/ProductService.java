@@ -23,6 +23,9 @@ public class ProductService {
     @Autowired
     private ProductImageRepository productImageRepository;
 
+    @Autowired
+    private com.example.be.repository.product.ProductVariantRepository productVariantRepository;
+
     // --- 1. LẤY TẤT CẢ SẢN PHẨM ---
     @Transactional(readOnly = true)
     public List<ProductResponse> getAllProducts() {
@@ -140,5 +143,21 @@ public class ProductService {
                 .brandName(product.getBrand() != null ? product.getBrand().getName() : "Không có thương hiệu")
                 .variants(variantDTOs)
                 .build();
+    }
+
+    @Transactional
+    public void deleteProduct(Integer id) {
+        // 1. Kiểm tra sản phẩm có tồn tại trong DB không
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm với ID: " + id));
+
+        // 2. XÓA BẢNG CON 1: Xóa sạch toàn bộ ảnh phụ trong bảng `product_images`
+        productImageRepository.deleteByProductId(product.getId());
+
+        // 3. XÓA BẢNG CON 2: Xóa sạch toàn bộ biến thể trong bảng `product_variants`
+        productVariantRepository.deleteByProductId(product.getId());
+
+        // 4. XÓA BẢNG CHA: Cuối cùng, xóa sản phẩm chính khỏi bảng `products`
+        productRepository.delete(product);
     }
 }

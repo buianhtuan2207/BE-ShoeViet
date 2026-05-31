@@ -42,4 +42,14 @@ public class ProductController {
             return ResponseEntity.badRequest().body("Lỗi khi cập nhật sản phẩm: " + e.getMessage());
         }
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteProduct(@PathVariable Integer id) {
+        try {
+            productService.deleteProduct(id);
+            return ResponseEntity.ok("Xóa sản phẩm thành công!");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Lỗi khi xóa sản phẩm: " + e.getMessage());
+        }
+    }
 }

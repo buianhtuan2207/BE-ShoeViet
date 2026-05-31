@@ -10,4 +10,5 @@ import java.util.List;
 public interface ProductVariantRepository extends JpaRepository<ProductVariant, Long> {
     // Tìm tất cả biến thể của một sản phẩm nếu cần dùng sau này
     List<ProductVariant> findByProductId(Long productId);
+    void deleteByProductId(Integer productId);
 }
