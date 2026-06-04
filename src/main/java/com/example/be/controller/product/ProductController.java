@@ -33,6 +33,17 @@ public class ProductController {
         }
     }
 
+    // LẤY CHI TIẾT MỘT SẢN PHẨM THEO ID
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getProductById(@PathVariable Integer id) {
+        try {
+            ProductResponse product = productService.getProductById(id);
+            return ResponseEntity.ok(product);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Lỗi khi lấy chi tiết sản phẩm: " + e.getMessage());
+        }
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<?> updateProduct(@PathVariable Integer id, @RequestBody ProductRequest request) {
         try {
