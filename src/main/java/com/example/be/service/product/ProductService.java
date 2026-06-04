@@ -156,4 +156,13 @@ public class ProductService {
         productVariantRepository.deleteByProductId(product.getId());
         productRepository.delete(product);
     }
+
+    @Transactional(readOnly = true)
+    public ProductResponse getProductById(Integer id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm với ID: " + id));
+
+        // Tái sử dụng hàm helper convertToResponse đã có sẵn của bạn để map đầy đủ ảnh phụ và variants
+        return this.convertToResponse(product);
+    }
 }
