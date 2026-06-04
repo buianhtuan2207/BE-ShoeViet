@@ -1,10 +1,15 @@
 package com.example.be.dto.req.product;
 
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.math.BigDecimal;
 import java.util.List;
 
 @Data
+@Getter
+@Setter
 public class ProductRequest {
     private Integer categoryId;
     private Integer brandId;

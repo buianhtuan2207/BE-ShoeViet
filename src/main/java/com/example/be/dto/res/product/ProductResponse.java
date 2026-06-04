@@ -1,15 +1,14 @@
 package com.example.be.dto.res.product;
 
 import com.example.be.dto.res.variant.VariantResponse;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.List;
 
 @Data
 @Builder
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProductResponse {
@@ -18,6 +17,7 @@ public class ProductResponse {
     private String description;
     private Double basePrice;
     private String imageUrl;
+    private List<String> galleryImages;
     private String categoryName;
     private String brandName;
     private List<VariantResponse> variants; // Danh sách size/màu đi kèm
