@@ -21,5 +21,6 @@ public class ProductRequest {
 
     // Mảng chứa nhiều ảnh phụ (Lưu vào bảng product_images)
     private List<String> galleryImages;
+    private List<VariantRequest> variants;
 
 }

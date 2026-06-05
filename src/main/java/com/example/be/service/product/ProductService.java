@@ -1,10 +1,12 @@
 package com.example.be.service.product;
 
 import com.example.be.dto.req.product.ProductRequest;
+import com.example.be.dto.req.product.VariantRequest;
 import com.example.be.dto.res.product.ProductResponse;
 import com.example.be.dto.res.variant.VariantResponse;
 import com.example.be.entity.product.Product;
 import com.example.be.entity.product.ProductImage;
+import com.example.be.entity.product.ProductVariant;
 import com.example.be.repository.product.ProductImageRepository;
 import com.example.be.repository.product.ProductRepository;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,30 +48,53 @@ public class ProductService {
         product.setName(request.getName());
         product.setDescription(request.getDescription());
         product.setBasePrice(request.getBasePrice());
-        product.setImageUrl(request.getImageUrl()); // Ảnh chính
+        product.setImageUrl(request.getImageUrl());
 
-        // Lưu trước để lấy ID sản phẩm sinh ra từ DB
         Product savedProduct = productRepository.save(product);
 
-        // 2. LƯU NHIỀU ẢNH PHỤ VÀO BẢNG `product_images` VÀ THIẾT LẬP KẾT NỐI NGƯỢC
+        // 2. LƯU ẢNH PHỤ
         List<ProductImage> savedGallery = new ArrayList<>();
         if (request.getGalleryImages() != null && !request.getGalleryImages().isEmpty()) {
             for (String url : request.getGalleryImages()) {
                 ProductImage productImage = new ProductImage();
                 productImage.setProductId(savedProduct.getId());
-                productImage.setProduct(savedProduct); // Đảm bảo mapping mối quan hệ JPA 2 chiều vững chắc
+                productImage.setProduct(savedProduct);
                 productImage.setImageUrl(url);
-
                 savedGallery.add(productImageRepository.save(productImage));
             }
         }
-
-        // Gán ngược danh sách vừa lưu vào Entity để Hibernate không bị rỗng khi Convert sang Response
         savedProduct.setProductImages(savedGallery);
 
-        // Khôi phục lấy thông tin danh mục, thương hiệu đầy đủ từ DB
-        Product fullProduct = productRepository.findById(savedProduct.getId())
-                .orElse(savedProduct);
+        // 3. THÊM MỚI: LƯU BIẾN THỂ (VARIANTS)
+        List<ProductVariant> savedVariants = new ArrayList<>();
+        if (request.getVariants() != null && !request.getVariants().isEmpty()) {
+            for (VariantRequest vRequest : request.getVariants()) {
+                com.example.be.entity.product.ProductVariant variant = new com.example.be.entity.product.ProductVariant();
+
+                variant.setProduct(savedProduct); // Map quan hệ
+                variant.setSize(vRequest.getSize());
+                variant.setColor(vRequest.getColor());
+                variant.setStockQuantity(vRequest.getStockQuantity());
+                variant.setSku(vRequest.getSku());
+
+                String skuInput = vRequest.getSku();
+                if (skuInput == null || skuInput.trim().isEmpty()) {
+                    String generatedSku = "PRD" + savedProduct.getId() + "-"
+                            + vRequest.getColor().toUpperCase().replaceAll("\\s+", "") + "-"
+                            + vRequest.getSize().toUpperCase() + "-"
+                            + java.util.UUID.randomUUID().toString().substring(0, 4).toUpperCase();
+                    variant.setSku(generatedSku);
+                } else {
+                    variant.setSku(skuInput);
+                }
+
+                savedVariants.add(productVariantRepository.save(variant));
+            }
+        }
+        savedProduct.setVariants(savedVariants); // Cập nhật lại context
+
+        // 4. Khôi phục thông tin đầy đủ để map sang Response
+        Product fullProduct = productRepository.findById(savedProduct.getId()).orElse(savedProduct);
 
         return this.convertToResponse(fullProduct);
     }
