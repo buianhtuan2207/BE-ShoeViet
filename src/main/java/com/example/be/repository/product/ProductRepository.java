@@ -14,4 +14,6 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
             "LEFT JOIN FETCH p.category " +
             "LEFT JOIN FETCH p.brand")
     List<Product> findAllWithAllDetails();
+
+    long countByCategoryId(Integer categoryId);
 }

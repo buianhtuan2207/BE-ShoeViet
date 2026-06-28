@@ -1,6 +1,7 @@
 package com.example.be.controller.category;
 
 import com.example.be.dto.req.category.CategoryRequest;
+import com.example.be.dto.res.category.CategoryResponse;
 import com.example.be.entity.category.Category;
 import com.example.be.service.category.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,8 +30,8 @@ public class CategoryController {
 
     // 2. Lấy tất cả danh mục
     @GetMapping
-    public ResponseEntity<List<Category>> getAllCategories() {
-        return ResponseEntity.ok(categoryService.getAllCategories());
+    public ResponseEntity<List<CategoryResponse>> getAllCategories() {
+        return ResponseEntity.ok(categoryService.getAllCategoriesWithCount());
     }
 
     // 3. Lấy chi tiết danh mục theo ID (MỚI)

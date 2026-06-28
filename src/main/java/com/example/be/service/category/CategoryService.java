@@ -1,8 +1,10 @@
 package com.example.be.service.category;
 
 import com.example.be.dto.req.category.CategoryRequest;
+import com.example.be.dto.res.category.CategoryResponse;
 import com.example.be.entity.category.Category;
 import com.example.be.repository.category.CategoryRepository;
+import com.example.be.repository.product.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,12 +16,17 @@ public class CategoryService {
     @Autowired
     private CategoryRepository categoryRepository;
 
+    @Autowired
+    private ProductRepository productRepository;
+
     // 1. Thêm danh mục mới (Đã có)
     @Transactional
     public Category addCategory(CategoryRequest request) {
         Category category = new Category();
         category.setName(request.getName());
         category.setDescription(request.getDescription());
+        category.setImageUrl(request.getImageUrl());
+        category.setIsActive(request.getIsActive() != null ? request.getIsActive() : true);
         return categoryRepository.save(category);
     }
 
@@ -39,33 +46,42 @@ public class CategoryService {
     // 4. Cập nhật danh mục (MỚI)
     @Transactional
     public Category updateCategory(Integer id, CategoryRequest request) {
-        // Tìm danh mục cũ trong DB
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy danh mục với ID: " + id));
 
-        // Kiểm tra tránh đè dữ liệu null nếu frontend/postman truyền thiếu trường
         if (request.getName() != null) {
             category.setName(request.getName());
         }
         if (request.getDescription() != null) {
             category.setDescription(request.getDescription());
         }
+        if (request.getImageUrl() != null) {
+            category.setImageUrl(request.getImageUrl());
+        }
 
+        if (request.getIsActive() != null) {
+            category.setIsActive(request.getIsActive());
+        }
         return categoryRepository.save(category);
     }
 
     // 5. Xóa danh mục (MỚI)
     @Transactional
     public void deleteCategory(Integer id) {
-        // Kiểm tra xem danh mục có tồn tại không trước khi xóa
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy danh mục với ID: " + id));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy danh mục!"));
 
-        /* LƯU Ý: Nếu có sản phẩm (Product) nào đang liên kết với category_id này,
-          việc xóa sẽ bị lỗi ràng buộc khóa ngoại (Foreign Key Constraint Violation).
-          Bạn cần xóa hoặc chuyển đổi category của các sản phẩm đó trước,
-          hoặc thiết lập CascadeType.REMOVE / @OnDelete trong Entity.
-         */
+        // Kiểm tra xem danh mục có đang chứa sản phẩm nào không
+        long count = productRepository.countByCategoryId(id);
+        if (count > 0) {
+            throw new RuntimeException("Không thể xóa danh mục vì đang chứa " + count + " sản phẩm!");
+        }
+
         categoryRepository.delete(category);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CategoryResponse> getAllCategoriesWithCount() {
+        return categoryRepository.findAllCategoriesWithProductCount();
     }
 }

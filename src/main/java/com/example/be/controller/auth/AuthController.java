@@ -1,9 +1,11 @@
 package com.example.be.controller.auth;
 
 import com.example.be.dto.req.*;
+import com.example.be.dto.req.auth.GoogleLoginRequest;
 import com.example.be.dto.res.LoginResponse;
 import com.example.be.entity.User;
 import com.example.be.service.UserService;
+import com.example.be.service.auth.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -19,6 +21,9 @@ public class AuthController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private AuthService authService;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest registerRequest) {
@@ -78,6 +83,16 @@ public class AuthController {
             return ResponseEntity.ok(message);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/google")
+    public ResponseEntity<?> googleLogin(@RequestBody GoogleLoginRequest request) {
+        try {
+            Object response = authService.loginWithGoogle(request);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Đăng nhập Google thất bại: " + e.getMessage());
         }
     }
 }

@@ -19,6 +19,12 @@ public class Category {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "image_url", length = 255)
+    private String imageUrl;
+
+    @Column(name = "is_active")
+    private Boolean isActive = true;
+
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 }
