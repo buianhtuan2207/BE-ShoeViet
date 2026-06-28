@@ -21,6 +21,13 @@ public class BrandService {
         Brand brand = new Brand();
         brand.setName(request.getName());
         brand.setDescription(request.getDescription());
+
+        brand.setLogo(request.getLogo());
+
+        if (request.getIsAction() != null) {
+            brand.setIsAction(request.getIsAction());
+        }
+
         return brandRepository.save(brand);
     }
 
@@ -30,14 +37,12 @@ public class BrandService {
         return brandRepository.findAll();
     }
 
-    // 4. Cập nhật thương hiệu (MỚI THÊM)
+    // 4. Cập nhật thương hiệu
     @Transactional
     public Brand updateBrand(Integer id, BrandRequest request) {
-        // Kiểm tra xem thương hiệu cũ có tồn tại hay không
         Brand brand = brandRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy thương hiệu với ID: " + id));
 
-        // Kiểm tra tránh đè dữ liệu null nếu frontend truyền thiếu trường
         if (request.getName() != null) {
             brand.setName(request.getName());
         }
@@ -45,13 +50,20 @@ public class BrandService {
             brand.setDescription(request.getDescription());
         }
 
+        if (request.getLogo() != null) {
+            brand.setLogo(request.getLogo());
+        }
+
+        if (request.getIsAction() != null) {
+            brand.setIsAction(request.getIsAction());
+        }
+
         return brandRepository.save(brand);
     }
 
-    // 5. Xóa thương hiệu (MỚI THÊM)
+    // 5. Xóa thương hiệu
     @Transactional
     public void deleteBrand(Integer id) {
-        // Kiểm tra sự tồn tại trước khi xóa để tránh crash DB
         Brand brand = brandRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy thương hiệu với ID: " + id));
         brandRepository.delete(brand);
