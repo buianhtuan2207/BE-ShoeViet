@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import com.example.be.dto.req.auth.ChangePasswordRequest;
 
 import java.util.List;
 import java.util.Map;
@@ -53,5 +54,20 @@ public class UserController {
     @GetMapping
     public ResponseEntity<List<User>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
+    }
+
+    @PutMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request) {
+        try {
+            // Lấy email của người dùng đang đăng nhập từ Token
+            String currentEmail = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+            // Gọi service xử lý
+            String result = userService.changePassword(currentEmail, request);
+
+            return ResponseEntity.ok(Map.of("message", result));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
     }
 }

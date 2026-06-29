@@ -1,6 +1,7 @@
 package com.example.be.service;
 
 import com.example.be.dto.req.*;
+import com.example.be.dto.req.auth.ChangePasswordRequest;
 import com.example.be.dto.res.LoginResponse;
 import com.example.be.entity.OtpVerification;
 import com.example.be.entity.User;
@@ -215,8 +216,26 @@ public class UserService {
 
         return userRepository.save(user);
     }
+
     public User getUserByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng với email: " + email));
+    }
+
+    public String changePassword(String email, ChangePasswordRequest request) {
+        // 1. Tìm người dùng dựa trên email đang login
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại!"));
+
+        // 2. Kiểm tra mật khẩu cũ xem có khớp với DB không
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            throw new RuntimeException("Mật khẩu hiện tại không chính xác!");
+        }
+
+        // 3. Mã hóa mật khẩu mới và lưu vào DB
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        return "Đổi mật khẩu thành công!";
     }
 }
