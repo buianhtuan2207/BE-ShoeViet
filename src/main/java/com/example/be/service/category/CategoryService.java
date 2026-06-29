@@ -6,6 +6,7 @@ import com.example.be.entity.category.Category;
 import com.example.be.repository.category.CategoryRepository;
 import com.example.be.repository.product.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
@@ -83,5 +84,10 @@ public class CategoryService {
     @Transactional(readOnly = true)
     public List<CategoryResponse> getAllCategoriesWithCount() {
         return categoryRepository.findAllCategoriesWithProductCount();
+    }
+
+    @Transactional(readOnly = true)
+    public List<CategoryResponse> getHomeCategories() {
+        return categoryRepository.findTopActiveCategories(PageRequest.of(0, 3));
     }
 }

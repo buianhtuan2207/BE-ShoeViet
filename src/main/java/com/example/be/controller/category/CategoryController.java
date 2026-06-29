@@ -66,4 +66,9 @@ public class CategoryController {
             return ResponseEntity.badRequest().body("Lỗi khi xóa danh mục: " + e.getMessage());
         }
     }
+
+    @GetMapping("/home")
+    public ResponseEntity<List<CategoryResponse>> getHomeCategories() {
+        return ResponseEntity.ok(categoryService.getHomeCategories());
+    }
 }
