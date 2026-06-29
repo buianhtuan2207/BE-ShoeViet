@@ -20,5 +20,6 @@ public class ProductResponse {
     private List<String> galleryImages;
     private String categoryName;
     private String brandName;
-    private List<VariantResponse> variants; // Danh sách size/màu đi kèm
+    private List<VariantResponse> variants;
+    private boolean isLiked;
 }
