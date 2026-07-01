@@ -4,9 +4,11 @@ import com.example.be.dto.req.product.ProductRequest;
 import com.example.be.dto.req.product.VariantRequest;
 import com.example.be.dto.res.product.ProductResponse;
 import com.example.be.dto.res.variant.VariantResponse;
+import com.example.be.entity.favorite.Favorite;
 import com.example.be.entity.product.Product;
 import com.example.be.entity.product.ProductImage;
 import com.example.be.entity.product.ProductVariant;
+import com.example.be.repository.favorite.FavoriteRepository;
 import com.example.be.repository.product.ProductImageRepository;
 import com.example.be.repository.product.ProductRepository;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,19 +32,40 @@ public class ProductService {
     @Autowired
     private com.example.be.repository.product.ProductVariantRepository productVariantRepository;
 
-    // --- 1. LẤY TẤT CẢ SẢN PHẨM (Đã tự động lấy kèm list ảnh phụ qua hàm helper) ---
+    @Autowired
+    private FavoriteRepository favoriteRepository;
+
+    // --- 1. LẤY TẤT CẢ SẢN PHẨM (Đã sửa lỗi cú pháp & tích hợp kiểm tra isLiked) ---
     @Transactional(readOnly = true)
-    public List<ProductResponse> getAllProducts() {
+    public List<ProductResponse> getAllProducts(Long currentUserId) {
+        // Lấy toàn bộ sản phẩm kèm chi tiết từ DB
         List<Product> products = productRepository.findAllWithAllDetails();
+
+        // Tạo danh sách lưu ID các sản phẩm đã thích nếu user đã đăng nhập
+        List<Long> favoriteProductIds = new ArrayList<>();
+        if (currentUserId != null) {
+            favoriteProductIds = favoriteRepository.findAllByUserIdOrderByCreatedAtDesc(currentUserId)
+                    .stream()
+                    .map(Favorite::getProductId)
+                    .collect(Collectors.toList());
+        }
+
+        final List<Long> finalFavIds = favoriteProductIds;
+
+        // Tiến hành map sang DTO Response
         return products.stream()
-                .map(this::convertToResponse)
+                .map(product -> {
+                    ProductResponse response = this.convertToResponse(product);
+                    // Đặt trạng thái isLiked: true nếu ID sản phẩm nằm trong list đã thích
+                    response.setLiked(finalFavIds.contains(product.getId().longValue()));
+                    return response;
+                })
                 .collect(Collectors.toList());
     }
 
-    // --- 2. THÊM SẢN PHẨM MỚI (Đã sửa lỗi lưu và hiển thị ảnh phụ đồng bộ) ---
+    // --- 2. THÊM SẢN PHẨM MỚI ---
     @Transactional
     public ProductResponse addProduct(ProductRequest request) {
-        // 1. LƯU THÔNG TIN CHUNG VÀO BẢNG `products`
         Product product = new Product();
         product.setCategoryId(request.getCategoryId());
         product.setBrandId(request.getBrandId());
@@ -52,7 +76,6 @@ public class ProductService {
 
         Product savedProduct = productRepository.save(product);
 
-        // 2. LƯU ẢNH PHỤ
         List<ProductImage> savedGallery = new ArrayList<>();
         if (request.getGalleryImages() != null && !request.getGalleryImages().isEmpty()) {
             for (String url : request.getGalleryImages()) {
@@ -65,13 +88,11 @@ public class ProductService {
         }
         savedProduct.setProductImages(savedGallery);
 
-        // 3. THÊM MỚI: LƯU BIẾN THỂ (VARIANTS)
         List<ProductVariant> savedVariants = new ArrayList<>();
         if (request.getVariants() != null && !request.getVariants().isEmpty()) {
             for (VariantRequest vRequest : request.getVariants()) {
-                com.example.be.entity.product.ProductVariant variant = new com.example.be.entity.product.ProductVariant();
-
-                variant.setProduct(savedProduct); // Map quan hệ
+                ProductVariant variant = new ProductVariant();
+                variant.setProduct(savedProduct);
                 variant.setSize(vRequest.getSize());
                 variant.setColor(vRequest.getColor());
                 variant.setStockQuantity(vRequest.getStockQuantity());
@@ -87,15 +108,12 @@ public class ProductService {
                 } else {
                     variant.setSku(skuInput);
                 }
-
                 savedVariants.add(productVariantRepository.save(variant));
             }
         }
-        savedProduct.setVariants(savedVariants); // Cập nhật lại context
+        savedProduct.setVariants(savedVariants);
 
-        // 4. Khôi phục thông tin đầy đủ để map sang Response
         Product fullProduct = productRepository.findById(savedProduct.getId()).orElse(savedProduct);
-
         return this.convertToResponse(fullProduct);
     }
 
@@ -112,10 +130,8 @@ public class ProductService {
         if (request.getCategoryId() != null) product.setCategoryId(request.getCategoryId());
         if (request.getBrandId() != null) product.setBrandId(request.getBrandId());
 
-        // Xử lý ảnh phụ
         if (request.getGalleryImages() != null) {
             productImageRepository.deleteByProductId(product.getId());
-
             List<ProductImage> newGallery = new ArrayList<>();
             if (!request.getGalleryImages().isEmpty()) {
                 for (String url : request.getGalleryImages()) {
@@ -126,18 +142,17 @@ public class ProductService {
                     newGallery.add(productImageRepository.save(productImage));
                 }
             }
-            product.setProductImages(newGallery); // Cập nhật lại context hiện tại cho thực thể
+            product.setProductImages(newGallery);
         }
 
         Product updatedProduct = productRepository.save(product);
         return this.convertToResponse(updatedProduct);
     }
 
-    // --- 4. HÀM HELPER CHUYỂN ĐỔI ENTITY SANG DTO (Sửa đổi cốt lõi bổ sung Map danh sách ảnh phụ) ---
+    // --- 4. HÀM HELPER CHUYỂN ĐỔI ENTITY SANG DTO ---
     private ProductResponse convertToResponse(Product product) {
         List<VariantResponse> variantDTOs = null;
 
-        // Map mảng variants sang DTO
         if (product.getVariants() != null) {
             variantDTOs = product.getVariants().stream().map(variant ->
                     VariantResponse.builder()
@@ -150,9 +165,8 @@ public class ProductService {
             ).collect(Collectors.toList());
         }
 
-        // BỔ SUNG: Trích xuất mảng danh sách String từ thực thể ProductImages để map sang DTO
         List<String> galleryUrls = new ArrayList<>();
-        if (product.getProductImages() != null) { // Hãy kiểm tra xem trong Entity tên thuộc tính là getProductImages() hay đặt khác nhé
+        if (product.getProductImages() != null) {
             galleryUrls = product.getProductImages().stream()
                     .map(ProductImage::getImageUrl)
                     .collect(Collectors.toList());
@@ -167,7 +181,8 @@ public class ProductService {
                 .categoryName(product.getCategory() != null ? product.getCategory().getName() : "Không có danh mục")
                 .brandName(product.getBrand() != null ? product.getBrand().getName() : "Không có thương hiệu")
                 .variants(variantDTOs)
-                .galleryImages(galleryUrls) // BẮT BUỘC PHẢI TRẢ VỀ ĐÂY để Frontend nhận được danh sách ảnh phụ
+                .galleryImages(galleryUrls)
+                .isLiked(false) // Mặc định là false, sẽ được ghi đè giá trị thực tế tại hàm getAllProducts()
                 .build();
     }
 
@@ -183,11 +198,18 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public ProductResponse getProductById(Integer id) {
+    public ProductResponse getProductById(Integer id, Long currentUserId) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm với ID: " + id));
 
-        // Tái sử dụng hàm helper convertToResponse đã có sẵn của bạn để map đầy đủ ảnh phụ và variants
-        return this.convertToResponse(product);
+        ProductResponse response = this.convertToResponse(product);
+
+        // Đánh dấu thích cho trang chi tiết nếu có ID người dùng
+        if (currentUserId != null) {
+            boolean isLiked = favoriteRepository.findByUserIdAndProductId(currentUserId, id.longValue()).isPresent();
+            response.setLiked(isLiked);
+        }
+
+        return response;
     }
 }

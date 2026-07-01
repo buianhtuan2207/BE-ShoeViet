@@ -20,7 +20,10 @@ public class ProductController {
     // 1. LẤY DANH SÁCH SẢN PHẨM (ĐÃ CHUẨN)
     @GetMapping
     public ResponseEntity<List<ProductResponse>> getAllProducts() {
-        return ResponseEntity.ok(productService.getAllProducts());
+        Long currentUserId = 1L;
+
+        List<ProductResponse> products = productService.getAllProducts(currentUserId);
+        return ResponseEntity.ok(products);
     }
 
     @PostMapping
@@ -37,7 +40,9 @@ public class ProductController {
     @GetMapping("/{id}")
     public ResponseEntity<?> getProductById(@PathVariable Integer id) {
         try {
-            ProductResponse product = productService.getProductById(id);
+            Long currentUserId = 1L;
+
+            ProductResponse product = productService.getProductById(id, currentUserId);
             return ResponseEntity.ok(product);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Lỗi khi lấy chi tiết sản phẩm: " + e.getMessage());
