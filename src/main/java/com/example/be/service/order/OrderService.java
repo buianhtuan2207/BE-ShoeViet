@@ -90,6 +90,8 @@ public class OrderService {
             orderItem.setColor(variant.getColor());
             orderItem.setQuantity(itemRequest.getQuantity());
             orderItem.setUnitPrice(product.getBasePrice());
+             
+
 
             // Tính tiền item
             BigDecimal itemTotal = product.getBasePrice()
