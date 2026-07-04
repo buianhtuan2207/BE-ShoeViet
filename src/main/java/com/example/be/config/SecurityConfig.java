@@ -36,7 +36,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
 
                         // Cho phép FE gọi tự do vào API Shipping để lấy tỉnh/thành/phí ship
-                        .requestMatchers("/api/v1/shipping/**", "/api/shipping/**", "/error").permitAll()
+                        .requestMatchers("/api/v1/shipping/**", "/api/shipping/**", "/api/v1/payment/**", "/error").permitAll()
 
                         // Cho phép xem (GET) sản phẩm, danh mục, thương hiệu
                         .requestMatchers(HttpMethod.GET, "/api/products/**", "/api/categories/**", "/api/brands/**", "/api/product-variants/**").permitAll()
