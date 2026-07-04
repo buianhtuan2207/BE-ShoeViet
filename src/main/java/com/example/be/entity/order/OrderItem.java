@@ -1,18 +1,12 @@
 package com.example.be.entity.order;
 
 import jakarta.persistence.*;
-import lombok.*;
-
+import lombok.Data;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
+@Data
 @Entity
 @Table(name = "order_items")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class OrderItem {
 
     @Id
@@ -23,35 +17,25 @@ public class OrderItem {
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
-    @Column(name = "product_id", nullable = false)
+    @Column(name = "product_id")
     private Integer productId;
 
     @Column(name = "product_variant_id", nullable = false)
     private Long productVariantId;
 
-    @Column(name = "product_name", nullable = false, length = 200)
+    @Column(name = "product_name")
     private String productName;
 
-    @Column(name = "variant_sku", nullable = false, length = 100)
+    @Column(name = "variant_sku")
     private String variantSku;
 
-    @Column(name = "size", length = 50)
     private String size;
-
-    @Column(name = "color", length = 50)
     private String color;
-
-    @Column(name = "quantity", nullable = false)
     private Integer quantity;
 
-    @Column(name = "unit_price", nullable = false)
+    @Column(name = "price")
     private BigDecimal unitPrice;
 
-    @Column(name = "total_price", nullable = false)
+    @Transient
     private BigDecimal totalPrice;
-
-    @Column(name = "created_at", insertable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-   
 }

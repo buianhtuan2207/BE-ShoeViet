@@ -1,21 +1,25 @@
 package com.example.be.dto.req.order;
 
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
-
 import java.math.BigDecimal;
 import java.util.List;
 
 @Data
-@Getter
-@Setter
 public class OrderRequest {
-    private Integer userId;
+    private Long userId;
+    private String orderCode;
     private BigDecimal discountAmount;
-    private String shippingAddress;
-    private String shippingPhone;
+    private BigDecimal shippingFee;
+    private String paymentMethod;
     private String shippingName;
+    private String fullName;
+    private String shippingPhone;
+    private String shippingAddress;
+
+    private Integer provinceId;
+    private Integer districtId;
+    private String wardCode;
+
     private String notes;
     private List<OrderItemRequest> orderItems;
 }
