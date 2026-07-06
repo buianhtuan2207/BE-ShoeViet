@@ -41,6 +41,9 @@ public class SecurityConfig {
                         // Cho phép xem (GET) sản phẩm, danh mục, thương hiệu
                         .requestMatchers(HttpMethod.GET, "/api/products/**", "/api/categories/**", "/api/brands/**", "/api/product-variants/**").permitAll()
 
+                        // Cho phép admin cập nhật trạng thái đơn hàng từ trang quản trị
+                        .requestMatchers(HttpMethod.PATCH, "/api/orders/**").hasAnyAuthority("admin", "user")
+
                         // 2. CHỈ ADMIN MỚI ĐƯỢC LÀM (Tạo mới, Sửa, Xóa)
                         .requestMatchers(HttpMethod.POST, "/api/products/**", "/api/categories/**", "/api/brands/**", "/api/product-variants/**").hasAuthority("admin")
                         .requestMatchers(HttpMethod.PUT, "/api/products/**", "/api/categories/**", "/api/brands/**", "/api/product-variants/**").hasAuthority("admin")
@@ -64,10 +67,10 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         // Cho phép chính xác nguồn Frontend từ React
-        configuration.setAllowedOrigins(List.of("http://localhost:3000"));
+        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:5173"));
 
         // Cho phép đầy đủ các phương thức gửi lên
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 
         // Cho phép tất cả các Headers (bao gồm cả Authorization mang Token từ FE gửi lên)
         configuration.setAllowedHeaders(List.of("*"));
