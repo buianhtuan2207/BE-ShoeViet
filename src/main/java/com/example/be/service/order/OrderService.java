@@ -299,12 +299,19 @@ public class OrderService {
         BigDecimal calculatedTotalPrice = item.getUnitPrice() != null ?
                 item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())) : BigDecimal.ZERO;
 
+        // Lấy thông tin sản phẩm từ Database để lấy link ảnh gốc
+        Product product = productRepository.findById(item.getProductId()).orElse(null);
+
+        // Nếu product có lưu trường ảnh (ví dụ đặt tên là getImageUrl() hoặc getProductImage() tùy thuộc Entity của bạn)
+        String imgUrl = (product != null && product.getImageUrl() != null) ? product.getImageUrl() : "https://via.placeholder.com/80";
+
         return OrderItemResponse.builder()
                 .id(item.getId())
                 .productId(item.getProductId() != null ? Long.valueOf(item.getProductId()) : null)
                 .productVariantId(item.getProductVariantId())
                 .productName(item.getProductName())
                 .variantSku(item.getVariantSku())
+                .productImage(imgUrl)
                 .size(item.getSize())
                 .color(item.getColor())
                 .quantity(item.getQuantity())
