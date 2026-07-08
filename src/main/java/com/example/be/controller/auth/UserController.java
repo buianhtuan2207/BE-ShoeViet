@@ -3,6 +3,7 @@ package com.example.be.controller.auth;
 import com.example.be.dto.req.UpdateProfileRequest;
 import com.example.be.entity.User;
 import com.example.be.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -34,7 +35,7 @@ public class UserController {
 
     // 2. CẬP NHẬT PROFILE CỦA TÔI
     @PutMapping("/my-profile")
-    public ResponseEntity<?> updateProfile(@RequestBody UpdateProfileRequest request) {
+    public ResponseEntity<?> updateProfile(@Valid @RequestBody UpdateProfileRequest request) {
         try {
             String currentEmail = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
             User updatedUser = userService.updateProfileByEmail(currentEmail, request);
