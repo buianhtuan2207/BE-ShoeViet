@@ -4,6 +4,7 @@ import com.example.be.dto.req.order.OrderRequest;
 import com.example.be.dto.req.order.UpdateOrderStatusRequest;
 import com.example.be.dto.res.order.OrderResponse;
 import com.example.be.service.order.OrderService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,7 +20,7 @@ public class OrderController {
     private OrderService orderService;
 
     @PostMapping
-    public ResponseEntity<?> createOrder(@RequestBody OrderRequest request) {
+    public ResponseEntity<?> createOrder(@Valid @RequestBody OrderRequest request) {
         try {
             OrderResponse newOrder = orderService.createOrder(request);
             return ResponseEntity.ok(newOrder);
@@ -75,7 +76,7 @@ public class OrderController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateOrder(@PathVariable Long id, @RequestBody OrderRequest request) {
+    public ResponseEntity<?> updateOrder(@PathVariable Long id,@Valid @RequestBody OrderRequest request) {
         try {
             OrderResponse updatedOrder = orderService.updateOrder(id, request);
             return ResponseEntity.ok(updatedOrder);

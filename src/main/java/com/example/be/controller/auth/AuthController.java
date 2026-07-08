@@ -6,6 +6,7 @@ import com.example.be.dto.res.LoginResponse;
 import com.example.be.entity.User;
 import com.example.be.service.UserService;
 import com.example.be.service.auth.AuthService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -26,7 +27,7 @@ public class AuthController {
     private AuthService authService;
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequest registerRequest) {
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest registerRequest) {
         String result = userService.registerUser(registerRequest);
 
         if (result.contains("thành công")) {
@@ -47,7 +48,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
         try {
             LoginResponse response = userService.login(request);
             return ResponseEntity.ok(response);
